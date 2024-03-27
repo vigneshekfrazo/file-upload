@@ -34,7 +34,7 @@
             formData.append('file', file, blobName);
 
             // Send file using Axios
-            axios.post(`https://azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455.blob.core.windows.net/${blobName}?AccountName=aceyolo6081014214&AccountKey=FH1GMI2dbF3NGeGqQYx/V/aT56B/AQf4ZSDJWUd3ENe1yfChrwk88gk5X6FZ9jiWxm8J/Za7uueY+ASty7lUUg==`, formData, {
+            axios.option(`https://aceyolo6081014214.blob.core.windows.net/azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455/${blobName}?`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data;',
                     'Accept-Ranges': 'bytes'
