@@ -34,7 +34,7 @@
             formData.append('file', file, blobName);
 
             // Send file using Axios
-            axios.post(`https://${containerName}.blob.core.windows.net/${blobName}?${connectionString}`, formData, {
+            axios.post(`https://${containerName}.blob.core.windows.net/upload/${blobName}?${connectionString}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data;',
                     'Accept-Ranges': 'bytes'
