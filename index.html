@@ -33,7 +33,10 @@
             formData.append('file', file, blobName);
 
             // Send file using Axios
-            axios.put(`https://aceyolo6081014214.blob.core.windows.net/azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455/${blobName}?`, formData)
+            axios.put(`https://aceyolo6081014214.blob.core.windows.net/azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455/${blobName}?`, formData, headers: {
+                    'Content-Type': 'multipart/form-data;',
+                    'Accept-Ranges': 'bytes'
+                })
             .then(response => {
                 console.log('Video uploaded successfully.', response);
             })
