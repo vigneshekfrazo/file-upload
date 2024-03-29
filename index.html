@@ -9,10 +9,11 @@
 <body>
     <h2>Upload File to Azure Blob Storage</h2>
     <input type="file" id="fileInput">
-    <button onclick="uploadFile()">Upload</button>
+    <button id="uploadButton">Upload</button>
 
     <script>
-const { BlobServiceClient } = Azure.StorageBlob;
+        const { BlobServiceClient } = Azure.StorageBlob;
+             document.getElementById('uploadButton').addEventListener('click', uploadFile);
         async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
