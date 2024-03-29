@@ -3,56 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Upload</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>File Upload to Azure Blob Storage</title>
+    <script src="azure-js.js"></script>
 </head>
 <body>
-    <h1>Video Upload</h1>
-    <input type="file" id="videoInput" accept="*">
-    <button id="uploadButton">Upload Video</button>
+    <h2>Upload File to Azure Blob Storage</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+
     <script>
-        document.getElementById('uploadButton').addEventListener('click', function() {
-            const input = document.getElementById('videoInput');
-            if (input.files.length === 0) {
-                alert('Please select a file.');
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file.");
                 return;
             }
-            const file = input.files[0];
-            uploadVideo(file);
-        });
-
-        function uploadVideo(file) {
-            const containerName = 'azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455';                
-            const connectionString = 'DefaultEndpointsProtocol=https;AccountName=aceyolo6081014214;AccountKey=FH1GMI2dbF3NGeGqQYx/V/aT56B/AQf4ZSDJWUd3ENe1yfChrwk88gk5X6FZ9jiWxm8J/Za7uueY+ASty7lUUg==;EndpointSuffix=core.windows.net';
-            // Generate a unique Blob name
-            let blobName = generateBlobName(file.name);
-            console.log('blobName', blobName);
-
-            // Create FormData object to send data with Axios
-            let formData = new FormData();
-            formData.append('file', file, blobName);
-
-            // Send file using Axios
-            axios.put(`https://aceyolo6081014214.blob.core.windows.net/azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455/${blobName}?`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data;',
-                    'Accept-Ranges': 'bytes',
-                    'x-ms-blob-content-type': file.type // Set x-ms-blob-content-type header
-                }
-            })
-            .then(response => {
-                console.log('Video uploaded successfully.', response);
-            })
-            .catch(error => {
-                console.error('Error uploading video.', error);
+            const blobService = AzureStorage.Blob.createBlobService({ 
+                connectionString:'DefaultEndpointsProtocol=https;AccountName=aceyolo6081014214;AccountKey=FH1GMI2dbF3NGeGqQYx/V/aT56B/AQf4ZSDJWUd3ENe1yfChrwk88gk5X6FZ9jiWxm8J/Za7uueY+ASty7lUUg==;EndpointSuffix=core.windows.net' 
             });
-        }
 
-        // Function to generate a unique Blob name
-        function generateBlobName(fileName) {
-            let currentDate = new Date();
-            let dateString = currentDate.toISOString().split('.')[0];
-            return 'video_' + dateString.replace(/[-:]/g, '').replace('T', '_').replace(/:/g, '-') + '_' + fileName;
+            const containerName = 'azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455';
+            const blobName = file.name;
+            const stream = file.slice(0, file.size);
+
+            blobService.createBlockBlobFromStream(containerName, blobName, stream, file.size, (error, result, response) => {
+                if (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while uploading the file.');
+                } else {
+                    console.log('File uploaded successfully.');
+                    alert('File uploaded successfully.');
+                }
+            });
         }
     </script>
 </body>
