@@ -7,11 +7,12 @@
     <script src="azure-js.js"></script>
 </head>
 <body>
-    <h2>Upload File Azure Blob Storage</h2>
+    <h2>Upload File to Azure Blob Storage</h2>
     <input type="file" id="fileInput">
     <button onclick="uploadFile()">Upload</button>
 
     <script>
+const { BlobServiceClient } = Azure.StorageBlob;
         async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
@@ -20,7 +21,7 @@
                 alert("Please select a file.");
                 return;
             }
-            const blobService = AzureStorage.Blob.createBlobService({ 
+            const blobService = BlobServiceClient.createBlobService({ 
                 connectionString:'DefaultEndpointsProtocol=https;AccountName=aceyolo6081014214;AccountKey=FH1GMI2dbF3NGeGqQYx/V/aT56B/AQf4ZSDJWUd3ENe1yfChrwk88gk5X6FZ9jiWxm8J/Za7uueY+ASty7lUUg==;EndpointSuffix=core.windows.net' 
             });
 
