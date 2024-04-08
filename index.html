@@ -1,54 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azure Blob Storage</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure Blob Storage CRUD</title>
 </head>
 <body>
-    <input type="file" id="fileInput" accept="image/*, video/*">
-    <button onclick="uploadFile()">Upload File</button>
+  <input type="file" id="fileInput">
+  <button onclick="uploadFile()">Upload File</button>
+  <ul id="blobList"></ul>
 
-    <script src="https://unpkg.com/@azure/storage-blob"></script>
-    <script>
-        const picturesAccount = "<aceyolo6081014214>";
-        const picturesContainer = "azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455";
-        const sasToken = "<YourSASToken>";
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const picturesAccount = "aceyolo6081014214";
+    const picturesContainer = "azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455";
+    const sasToken = "sv=2022-11-02&ss=bfqt&srt=c&sp=rwdlacupiytfx&se=2024-04-08T18:27:47Z&st=2024-04-08T10:27:47Z&spr=https&sig=dNF6rCNKnlxeaQhezqjfkrr8JDAjEME80GwWGvc89%2FY%3D";
 
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            
-            if (!file) return;
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
 
-            const blobServiceClient = new Azure.Storage.Blob.BlobServiceClient(`https://${picturesAccount}.blob.core.windows.net?${sasToken}`);
-            const containerClient = blobServiceClient.getContainerClient(picturesContainer);
+      const formData = new FormData();
+      formData.append('file', file);
 
-            const blockBlobClient = containerClient.getBlockBlobClient(file.name);
-            await blockBlobClient.uploadBrowserData(file, { blobHTTPHeaders: { blobContentType: file.type } });
+      try {
+        await axios.post(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}?${sasToken}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        alert('File uploaded successfully!');
+        listFiles();
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      }
+    }
 
-            console.log("File uploaded successfully!");
-        }
+    async function listFiles() {
+      const blobList = document.getElementById('blobList');
+      blobList.innerHTML = '';
 
-        async function listFiles() {
-            const blobServiceClient = new Azure.Storage.Blob.BlobServiceClient(`https://${picturesAccount}.blob.core.windows.net?${sasToken}`);
-            const containerClient = blobServiceClient.getContainerClient(picturesContainer);
+      try {
+        const response = await axios.get(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}?${sasToken}`);
+        const blobs = response.data;
+        blobs.forEach(blob => {
+          const li = document.createElement('li');
+          li.textContent = blob.name;
+          blobList.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error listing blobs:', error);
+      }
+    }
 
-            const blobs = [];
-            for await (const blob of containerClient.listBlobsFlat()) {
-                blobs.push(blob.name);
-            }
+    async function downloadFile(blobName) {
+      try {
+        const response = await axios.get(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}/${blobName}?${sasToken}`, {
+          responseType: 'blob'
+        });
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = blobName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading blob:', error);
+      }
+    }
 
-            console.log("List of blobs:", blobs);
-        }
+    async function deleteFile(blobName) {
+      try {
+        await axios.delete(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}/${blobName}?${sasToken}`);
+        alert('File deleted successfully!');
+        listFiles();
+      } catch (error) {
+        console.error('Error deleting blob:', error);
+      }
+    }
 
-        async function deleteFile(fileName) {
-            const blobServiceClient = new Azure.Storage.Blob.BlobServiceClient(`https://${picturesAccount}.blob.core.windows.net?${sasToken}`);
-            const containerClient = blobServiceClient.getContainerClient(picturesContainer);
-
-            await containerClient.deleteBlob(fileName);
-            console.log("File deleted successfully!");
-        }
-    </script>
+    // Initial file listing on page load
+    listFiles();
+  </script>
 </body>
 </html>
