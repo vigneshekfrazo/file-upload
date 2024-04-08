@@ -3,42 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload to Azure Blob Storage</title>
-    <script src="azure-js.js"></script>
+    <title>Azure Blob Storage</title>
 </head>
 <body>
-    <h2>Upload File to Azure Blob Storage</h2>
-    <input type="file" id="fileInput">
-    <button id="uploadButton">Upload</button>
+    <input type="file" id="fileInput" accept="image/*, video/*">
+    <button onclick="uploadFile()">Upload File</button>
 
+    <script src="https://unpkg.com/@azure/storage-blob"></script>
     <script>
-        const { BlobServiceClient } = Azure.StorageBlob;
-             document.getElementById('uploadButton').addEventListener('click', uploadFile);
+        const picturesAccount = "<YourStorageAccountName>";
+        const picturesContainer = "pictures";
+        const sasToken = "<YourSASToken>";
+
         async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
+            
+            if (!file) return;
 
-            if (!file) {
-                alert("Please select a file.");
-                return;
+            const blobServiceClient = new Azure.Storage.Blob.BlobServiceClient(`https://${picturesAccount}.blob.core.windows.net?${sasToken}`);
+            const containerClient = blobServiceClient.getContainerClient(picturesContainer);
+
+            const blockBlobClient = containerClient.getBlockBlobClient(file.name);
+            await blockBlobClient.uploadBrowserData(file, { blobHTTPHeaders: { blobContentType: file.type } });
+
+            console.log("File uploaded successfully!");
+        }
+
+        async function listFiles() {
+            const blobServiceClient = new Azure.Storage.Blob.BlobServiceClient(`https://${picturesAccount}.blob.core.windows.net?${sasToken}`);
+            const containerClient = blobServiceClient.getContainerClient(picturesContainer);
+
+            const blobs = [];
+            for await (const blob of containerClient.listBlobsFlat()) {
+                blobs.push(blob.name);
             }
-            const blobService = BlobServiceClient.createBlobService({ 
-                connectionString:'DefaultEndpointsProtocol=https;AccountName=aceyolo6081014214;AccountKey=FH1GMI2dbF3NGeGqQYx/V/aT56B/AQf4ZSDJWUd3ENe1yfChrwk88gk5X6FZ9jiWxm8J/Za7uueY+ASty7lUUg==;EndpointSuffix=core.windows.net' 
-            });
 
-            const containerName = 'azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455';
-            const blobName = file.name;
-            const stream = file.slice(0, file.size);
+            console.log("List of blobs:", blobs);
+        }
 
-            blobService.createBlockBlobFromStream(containerName, blobName, stream, file.size, (error, result, response) => {
-                if (error) {
-                    console.error('Error:', error);
-                    alert('An error occurred while uploading the file.');
-                } else {
-                    console.log('File uploaded successfully.');
-                    alert('File uploaded successfully.');
-                }
-            });
+        async function deleteFile(fileName) {
+            const blobServiceClient = new Azure.Storage.Blob.BlobServiceClient(`https://${picturesAccount}.blob.core.windows.net?${sasToken}`);
+            const containerClient = blobServiceClient.getContainerClient(picturesContainer);
+
+            await containerClient.deleteBlob(fileName);
+            console.log("File deleted successfully!");
         }
     </script>
 </body>
