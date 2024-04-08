@@ -1,58 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Upload</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure Blob Storage CRUD</title>
 </head>
 <body>
-    <h1>Video Upload</h1>
-    <input type="file" id="videoInput" accept="*">
-    <button id="uploadButton">Upload Video</button>
-    <script>
-        document.getElementById('uploadButton').addEventListener('click', function() {
-            const input = document.getElementById('videoInput');
-            if (input.files.length === 0) {
-                alert('Please select a file.');
-                return;
-            }
-            const file = input.files[0];
-            uploadVideo(file);
+  <input type="file" id="fileInput">
+  <button onclick="uploadFile()">Upload File</button>
+  <ul id="blobList"></ul>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const picturesAccount = "<your_storage_account_name>";
+    const picturesContainer = "pictures";
+    const sasToken = "<your_sas_token>";
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        await axios.post(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}?${sasToken}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         });
+        alert('File uploaded successfully!');
+        listFiles();
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      }
+    }
 
-        function uploadVideo(file) {
-            const containerName = 'azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455';                
-            const connectionString = 'DefaultEndpointsProtocol=https;AccountName=aceyolo6081014214;AccountKey=FH1GMI2dbF3NGeGqQYx/V/aT56B/AQf4ZSDJWUd3ENe1yfChrwk88gk5X6FZ9jiWxm8J/Za7uueY+ASty7lUUg==;EndpointSuffix=core.windows.net';
-            // Generate a unique Blob name
-            let blobName = generateBlobName(file.name);
-            console.log('blobName', blobName);
+    async function listFiles() {
+      const blobList = document.getElementById('blobList');
+      blobList.innerHTML = '';
 
-            // Create FormData object to send data with Axios
-            let formData = new FormData();
-            formData.append('file', file, blobName);
+      try {
+        const response = await axios.get(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}?${sasToken}`);
+        const blobs = response.data;
+        blobs.forEach(blob => {
+          const li = document.createElement('li');
+          li.textContent = blob.name;
+          blobList.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error listing blobs:', error);
+      }
+    }
 
-            // Send file using Axios
-            axios.put(`https://aceyolo6081014214.blob.core.windows.net/azureml-blobstore-4cfddab7-116a-4503-a59b-82db3b8c2455/${blobName}?sv=2022-11-02&ss=b&srt=sc&sp=rwdlaciytfx&se=2024-03-30T15:40:22Z&st=2024-03-29T07:40:22Z&spr=https,http&sig=utToXiHEK2NSA8er5C6CDcv%2FpxaI%2FntLu%2FfJe4o5NBc%3D`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data;',
-                    'Accept-Ranges': 'bytes'
-                }
-            })
-            .then(response => {
-                console.log('Video uploaded successfully.', response);
-            })
-            .catch(error => {
-                console.error('Error uploading video.', error);
-            });
-        }
+    async function downloadFile(blobName) {
+      try {
+        const response = await axios.get(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}/${blobName}?${sasToken}`, {
+          responseType: 'blob'
+        });
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = blobName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading blob:', error);
+      }
+    }
 
-        // Function to generate a unique Blob name
-        function generateBlobName(fileName) {
-            let currentDate = new Date();
-            let dateString = currentDate.toISOString().split('.')[0];
-            return 'video_' + dateString.replace(/[-:]/g, '').replace('T', '_').replace(/:/g, '-') + '_' + fileName;
-        }
-    </script>
+    async function deleteFile(blobName) {
+      try {
+        await axios.delete(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}/${blobName}?${sasToken}`);
+        alert('File deleted successfully!');
+        listFiles();
+      } catch (error) {
+        console.error('Error deleting blob:', error);
+      }
+    }
+
+    // Initial file listing on page load
+    listFiles();
+  </script>
 </body>
 </html>
