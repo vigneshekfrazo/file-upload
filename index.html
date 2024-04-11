@@ -41,7 +41,7 @@
       blobList.innerHTML = '';
 
       try {
-        const response = await axios.get(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}?${sasToken}`);
+        const response = await axios.get(`https://${picturesAccount}.blob.core.windows.net/${picturesContainer}?restype=container&comp=list&prefix=&delimiter=%2F&marker=&maxresults=30&include=metadata&sv=2022-11-02&ss=bqtf&srt=sco&sp=rwdlacuptfxiy&se=2024-04-11T15:16:01Z&sig=5y%2BLfw0KfWrp7vLrBQYpBl1xMhbxlwX9ySivq6RAUpU%3D`);
         const blobs = response.data;
         blobs.forEach(blob => {
           const li = document.createElement('li');
